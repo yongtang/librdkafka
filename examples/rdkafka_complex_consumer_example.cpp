@@ -103,6 +103,8 @@ class ExampleEventCb : public RdKafka::EventCb {
         }
         std::cerr << "ERROR (" << RdKafka::err2str(event.err()) << "): " <<
             event.str() << std::endl;
+	// Forcefully stop to see alarm clock signal
+        run = 0;
         break;
 
       case RdKafka::Event::EVENT_STATS:
@@ -361,8 +363,8 @@ int main (int argc, char **argv) {
     }
   }
 
-  ExampleEventCb ex_event_cb;
-  conf->set("event_cb", &ex_event_cb, errstr);
+  ExampleEventCb *ex_event_cb = new ExampleEventCb();
+  conf->set("event_cb", ex_event_cb, errstr);
 
   if (do_conf_dump) {
     int pass;
@@ -445,6 +447,13 @@ int main (int argc, char **argv) {
 
   std::cerr << "% Consumed " << msg_cnt << " messages ("
             << msg_bytes << " bytes)" << std::endl;
+
+  // delete ex_event_cb, and wait for some time
+  delete ex_event_cb;
+  for (int i = 0; i < 10; i++) {
+    sleep(5);
+    std::cerr << "Wait 5 seconds ..." << (i + 1) << "/10" << std::endl;
+  }
 
   /*
    * Wait for RdKafka to decommission.
